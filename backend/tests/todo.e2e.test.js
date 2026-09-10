@@ -37,7 +37,6 @@ test.describe('Todo App - Scénario end-to-end (navigateur)', () => {
     await expect(page.locator('.task-item', { hasText: taskTitle })).toHaveCount(0);
 
     
-    await page.pause();
   });
 
 });

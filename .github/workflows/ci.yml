@@ -1,0 +1,58 @@
+name: CI - Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  unit-and-integration:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+
+      - name: Installer Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Installer les dépendances backend
+        run: npm ci
+        working-directory: ./backend
+
+      - name: Lancer les tests unitaires et d'intégration
+        run: npm test
+        working-directory: ./backend
+
+  e2e:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+
+      - name: Installer Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Installer les dépendances backend
+        run: npm ci
+        working-directory: ./backend
+
+      - name: Installer les dépendances frontend
+        run: npm ci
+        working-directory: ./front-end
+
+      - name: Installer les navigateurs Playwright
+        run: npx playwright install --with-deps chromium
+        working-directory: ./backend
+
+      - name: Lancer les tests end-to-end
+        run: npx playwright test
+        working-directory: ./backend
+        env:
+          CI: true

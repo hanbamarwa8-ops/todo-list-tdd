@@ -4,13 +4,35 @@ export default defineConfig({
   testDir: './tests',
   testMatch: '**/*.e2e.test.js',
   fullyParallel: false,
+
+  webServer: [
+    {
+      command: 'npm start',
+      cwd: '.',
+      url: 'http://localhost:3001/api/todos',
+      reuseExistingServer: !process.env.CI,
+      timeout: 30000
+    },
+    {
+      command: 'npm start',
+      cwd: '../front-end',
+      url: 'http://localhost:3000',
+      reuseExistingServer: !process.env.CI,
+      timeout: 60000
+    }
+  ],
+
   use: {
-    baseURL: 'http://localhost:3000',
+    baseURL: 'http://localhost:3000'
   },
+
   projects: [
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'], channel: 'chrome' },
-    },
-  ],
+      use: {
+        ...devices['Desktop Chrome'],
+        ...(process.env.CI ? {} : { channel: 'chrome' })
+      }
+    }
+  ]
 });
