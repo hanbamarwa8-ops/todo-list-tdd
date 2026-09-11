@@ -26,6 +26,8 @@ jobs:
       - name: Lancer les tests unitaires et d'intégration
         run: npm test
         working-directory: ./backend
+        env:
+          MONGODB_URI: ${{ secrets.MONGODB_URI }}
 
   e2e:
     runs-on: ubuntu-latest
@@ -56,3 +58,4 @@ jobs:
         working-directory: ./backend
         env:
           CI: true
+          MONGODB_URI: ${{ secrets.MONGODB_URI }}
