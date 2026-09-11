@@ -1,0 +1,21 @@
+.contact {
+    max-width: 480px;
+    margin: 100px auto;
+    padding: 24px;
+    text-align: center;
+   
+  }
+  
+  .contact  {
+    color: #2d2d2d;
+  }
+  
+  .contact  a {
+    color: #6c63ff;
+    text-decoration: none;
+    font-weight: bold;
+  }
+  
+  .contact  a:hover {
+    text-decoration: underline;
+  }

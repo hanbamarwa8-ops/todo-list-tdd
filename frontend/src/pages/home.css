@@ -1,0 +1,21 @@
+.home {
+    max-width: 480px;
+    margin: 100px auto;
+    padding: 24px;
+    text-align: center;
+   
+  }
+  
+  .home h1 {
+    color: #2d2d2d;
+  }
+  
+  .home a {
+    color: #6c63ff;
+    text-decoration: none;
+    font-weight: bold;
+  }
+  
+  .home a:hover {
+    text-decoration: underline;
+  }

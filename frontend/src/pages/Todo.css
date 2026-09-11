@@ -1,0 +1,137 @@
+.app {
+    max-width: 480px;
+    margin: 60px auto;
+    padding: 24px 28px;
+    background-color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  }
+  
+  .app-title {
+    text-align: center;
+    color: #2d2d2d;
+    margin-bottom: 24px;
+  }
+  
+  .task-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 20px 0;
+  }
+  
+  .task-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    background-color: #f7f7f9;
+    border-radius: 8px;
+    transition: background-color 0.2s ease;
+  }
+  
+  .task-item:hover {
+    background-color: #efeff3;
+  }
+  
+  .task-text {
+    flex: 1;
+    word-break: break-word;
+    color: #333;
+  }
+  
+  .task-edit-input,
+  .new-task-input {
+    flex: 1;
+    padding: 8px 10px;
+    border: 1px solid #d5d5db;
+    border-radius: 6px;
+    font-size: 14px;
+    outline: none;
+  }
+  
+  .task-edit-input:focus,
+  .new-task-input:focus {
+    border-color: #6c63ff;
+  }
+  
+  .add-task-row {
+    display: flex;
+    gap: 8px;
+  }
+  
+  .material-symbols-outlined {
+    font-family: "Material Symbols Outlined";
+    font-weight: normal;
+    font-style: normal;
+    font-size: 20px;
+    line-height: 1;
+    vertical-align: middle;
+  }
+  
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    padding: 8px 12px;
+    font-size: 14px;
+    transition: transform 0.1s ease, opacity 0.2s ease;
+  }
+  
+  .btn:hover {
+    opacity: 0.85;
+  }
+  
+  .btn:active {
+    transform: scale(0.95);
+  }
+  
+  .btn-add {
+    background-color: #6c63ff;
+    color: white;
+    font-weight: bold;
+    white-space: nowrap;
+  }
+  
+  .btn-add .material-symbols-outlined {
+    color: white;
+  }
+  
+  .btn-edit {
+    background-color: transparent;
+  }
+  
+  .btn-edit .material-symbols-outlined {
+    color: #6c63ff;
+  }
+  
+  .btn-delete {
+    background-color: transparent;
+  }
+  
+  .btn-delete .material-symbols-outlined {
+    color: #e53935;
+  }
+  
+  .btn-save {
+    background-color: transparent;
+  }
+  
+  .btn-save .material-symbols-outlined {
+    color: #2e7d32;
+  }
+  
+  .btn-cancel {
+    background-color: transparent;
+  }
+  
+  .btn-cancel .material-symbols-outlined {
+    color: #757575;
+  }
+  .task-item.completed .task-text {
+    text-decoration: line-through;
+    color: #999;
+  }
