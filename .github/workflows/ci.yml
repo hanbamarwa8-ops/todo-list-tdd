@@ -58,4 +58,4 @@ jobs:
         working-directory: ./backend
         env:
           CI: true
-          MONGODB_URI: ${{ secrets.MONGODB_URI }}
+          MONGODB_URI: ${{mongodb+srv://todoUser:MaraM2026HanBa@cluster0.jplfp7x.mongodb.net/?appName=Cluster0}}
