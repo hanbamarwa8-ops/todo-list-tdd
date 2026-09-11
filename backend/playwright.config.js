@@ -15,7 +15,7 @@ export default defineConfig({
     },
     {
       command: 'npm start',
-      cwd: '../front-end',
+      cwd: '../frontend',
       url: 'http://localhost:3000',
       reuseExistingServer: !process.env.CI,
       timeout: 60000
