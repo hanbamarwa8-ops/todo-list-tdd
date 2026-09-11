@@ -1,43 +1,35 @@
-import fs from "fs/promises";
-import path from "path";
-import { fileURLToPath } from "url";
+import { ObjectId } from "mongodb";
+import { getDB } from "../db/connection.js";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const COLLECTION_NAME = "todos";
 
-const dataPath = path.join(__dirname, "../data/todos.json");
-
-async function readTodos() {
-  const data = await fs.readFile(dataPath, "utf-8");
-
-  return JSON.parse(data);
-}
-
-
-async function writeTodos(todos) {
-  await fs.writeFile(
-    dataPath,
-    JSON.stringify(todos, null, 2)
-  );
+function toApiFormat(doc) {
+  if (!doc) return null;
+  return {
+    id: doc._id.toString(),
+    title: doc.title,
+    completed: doc.completed
+  };
 }
 
 // Récupérer tous les todos
 export async function getAllTodos() {
-  return await readTodos();
+  const db = getDB();
+  const todos = await db.collection(COLLECTION_NAME).find().toArray();
+  return todos.map(toApiFormat);
 }
+
 
 // Récupérer un todo par son ID
 export async function getTodoById(id) {
-  const todos = await readTodos();
-
-  const todo = todos.find(
-    (todo) => todo.id === Number(id)
-  );
-
-  if (!todo) {
+  if (!ObjectId.isValid(id)) {
     return null;
   }
 
-  return todo;
+  const db = getDB();
+  const todo = await db.collection(COLLECTION_NAME).findOne({ _id: new ObjectId(id) });
+
+  return toApiFormat(todo);
 }
 
 // Créer un todo
@@ -50,39 +42,28 @@ export async function createTodo(title) {
     throw new Error("Le titre est requis");
   }
 
-  const todos = await readTodos();
-
-  const nextId =
-    todos.length > 0
-      ? Math.max(...todos.map((todo) => todo.id)) + 1
-      : 1;
-
+  const db = getDB();
   const newTodo = {
-    id: nextId,
     title: title.trim(),
     completed: false
   };
 
-  todos.push(newTodo);
+  const result = await db.collection(COLLECTION_NAME).insertOne(newTodo);
 
-  await writeTodos(todos);
-
-  return newTodo;
+  return toApiFormat({ _id: result.insertedId, ...newTodo });
 }
+
+
+
 
 // Modifier un todo
 export async function updateTodo(id, updates) {
-  const todos = await readTodos();
-
-  const index = todos.findIndex(
-    (todo) => todo.id === Number(id)
-  );
-
-  if (index === -1) {
+  if (!ObjectId.isValid(id)) {
     return null;
   }
 
   const { title, completed } = updates;
+  const setFields = {};
 
   if (title !== undefined) {
     if (
@@ -91,40 +72,40 @@ export async function updateTodo(id, updates) {
     ) {
       throw new Error("Le titre est invalide");
     }
-
-    todos[index].title = title.trim();
+    setFields.title = title.trim();
   }
 
   if (completed !== undefined) {
     if (typeof completed !== "boolean") {
-      throw new Error(
-        "completed doit être un booléen"
-      );
+      throw new Error("completed doit être un booléen");
     }
-
-    todos[index].completed = completed;
+    setFields.completed = completed;
   }
 
-  await writeTodos(todos);
+  const db = getDB();
+  const result = await db.collection(COLLECTION_NAME).findOneAndUpdate(
+    { _id: new ObjectId(id) },
+    { $set: setFields },
+    { returnDocument: "after" }
+  );
 
-  return todos[index];
+  return toApiFormat(result);
 }
 
 // Supprimer un todo
 export async function deleteTodo(id) {
-  const todos = await readTodos();
-
-  const index = todos.findIndex(
-    (todo) => todo.id === Number(id)
-  );
-
-  if (index === -1) {
+  if (!ObjectId.isValid(id)) {
     return null;
   }
 
-  const [deleted] = todos.splice(index, 1);
+  const db = getDB();
+  const todo = await db.collection(COLLECTION_NAME).findOne({ _id: new ObjectId(id) });
 
-  await writeTodos(todos);
+  if (!todo) {
+    return null;
+  }
 
-  return deleted;
+  await db.collection(COLLECTION_NAME).deleteOne({ _id: new ObjectId(id) });
+
+  return toApiFormat(todo);
 }

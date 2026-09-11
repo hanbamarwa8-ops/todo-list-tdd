@@ -20,8 +20,7 @@ export function router(req, res) {
     return addTodo(req, res);
   }
 
-  const match = url.match(/^\/api\/todos\/(\d+)$/);
-
+  const match = url.match(/^\/api\/todos\/([a-fA-F0-9]{24})$/);
   if (match) {
     const id = match[1];
 

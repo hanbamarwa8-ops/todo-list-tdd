@@ -1,13 +1,14 @@
 import app from "../src/app.js";
-import fs from "fs/promises";
-import path from "path";
+import { connectDB, closeDB, getDB } from "../src/db/connection.js";
+import { ObjectId } from "mongodb";
 
-const dataPath = path.resolve("src/data/todos.json");
-let originalData;
+const NON_EXISTENT_ID = "507f1f77bcf86cd799439011";
+
 let port;
+let createdIds = [];
 
 beforeAll(async () => {
-  originalData = await fs.readFile(dataPath, "utf-8");
+  await connectDB();
 
   await new Promise((resolve) => {
     app.listen(0, () => {
@@ -17,8 +18,18 @@ beforeAll(async () => {
   });
 });
 
+afterEach(async () => {
+  if (createdIds.length > 0) {
+    const db = getDB();
+    await db.collection("todos").deleteMany({
+      _id: { $in: createdIds.map((id) => new ObjectId(id)) }
+    });
+    createdIds = [];
+  }
+});
+
 afterAll(async () => {
-  await fs.writeFile(dataPath, originalData);
+  await closeDB();
 
   await new Promise((resolve) => {
     app.close(resolve);
@@ -35,9 +46,10 @@ describe("Todo API - Tests d'intégration", () => {
     });
 
     const data = await response.json();
+    createdIds.push(data.id);
 
     expect(response.status).toBe(201);
-    expect(data.id).toEqual(expect.any(Number));
+    expect(data.id).toEqual(expect.any(String));
     expect(data.title).toBe("Apprendre les tests d'intégration");
     expect(data.completed).toBe(false);
   });
@@ -58,6 +70,7 @@ describe("Todo API - Tests d'intégration", () => {
     });
 
     const createdTodo = await createResponse.json();
+    createdIds.push(createdTodo.id);
 
     const response = await fetch(`http://localhost:${port}/api/todos/${createdTodo.id}`);
     const data = await response.json();
@@ -69,7 +82,7 @@ describe("Todo API - Tests d'intégration", () => {
   });
 
   test("GET /api/todos/:id - doit retourner 404 si le todo n'existe pas", async () => {
-    const response = await fetch(`http://localhost:${port}/api/todos/99999`);
+    const response = await fetch(`http://localhost:${port}/api/todos/${NON_EXISTENT_ID}`);
     const data = await response.json();
 
     expect(response.status).toBe(404);
@@ -84,6 +97,7 @@ describe("Todo API - Tests d'intégration", () => {
     });
 
     const createdTodo = await createResponse.json();
+    createdIds.push(createdTodo.id);
 
     const response = await fetch(`http://localhost:${port}/api/todos/${createdTodo.id}`, {
       method: "PUT",
@@ -120,7 +134,7 @@ describe("Todo API - Tests d'intégration", () => {
   });
 
   test("PUT /api/todos/:id - doit retourner 404 si le todo n'existe pas", async () => {
-    const response = await fetch(`http://localhost:${port}/api/todos/99999`, {
+    const response = await fetch(`http://localhost:${port}/api/todos/${NON_EXISTENT_ID}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ title: "Test" })
@@ -133,7 +147,7 @@ describe("Todo API - Tests d'intégration", () => {
   });
 
   test("DELETE /api/todos/:id - doit retourner 404 si le todo n'existe pas", async () => {
-    const response = await fetch(`http://localhost:${port}/api/todos/99999`, {
+    const response = await fetch(`http://localhost:${port}/api/todos/${NON_EXISTENT_ID}`, {
       method: "DELETE"
     });
 
