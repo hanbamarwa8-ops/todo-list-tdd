@@ -47,7 +47,7 @@ jobs:
 
       - name: Installer les dépendances frontend
         run: npm ci
-        working-directory: ./frontend
+        working-directory: ./front-end
 
       - name: Installer les navigateurs Playwright
         run: npx playwright install --with-deps chromium
