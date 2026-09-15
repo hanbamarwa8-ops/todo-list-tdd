@@ -1,9 +1,10 @@
 import {getAllTodos,getTodoById,createTodo,updateTodo,deleteTodo} from "../models/todo.model.js";
 
 // GET 
-export async function getTodos(req, res) {
+// Récupérer les taches de user connecté
+export async function getTodos(req, res, userId) {
   try {
-    const todos = await getAllTodos();
+    const todos = await getAllTodos(userId);
 
     res.writeHead(200, {
       "Content-Type": "application/json"
@@ -20,17 +21,17 @@ export async function getTodos(req, res) {
 
     res.end(
       JSON.stringify({
-        message:
-          "Erreur lors de la récupération des todos"
+        message: "Erreur lors de la récupération des todos"
       })
     );
   }
 }
 
-// GET 
-export async function getTodo(req, res, id) {
+
+// GET
+export async function getTodo(req, res, id, userId) {
   try {
-    const todo = await getTodoById(id);
+    const todo = await getTodoById(id, userId);
 
     if (!todo) {
       res.writeHead(404, {
@@ -59,15 +60,15 @@ export async function getTodo(req, res, id) {
 
     res.end(
       JSON.stringify({
-        message:
-          "Erreur lors de la récupération du todo"
+        message: "Erreur lors de la récupération du todo"
       })
     );
   }
 }
 
-// POST
-export async function addTodo(req, res) {
+
+// POST 
+export async function addTodo(req, res, userId) {
   let body = "";
 
   req.on("data", (chunk) => {
@@ -110,7 +111,7 @@ export async function addTodo(req, res) {
         );
       }
 
-      const todo = await createTodo(title);
+      const todo = await createTodo(title, userId);
 
       res.writeHead(201, {
         "Content-Type": "application/json"
@@ -127,16 +128,16 @@ export async function addTodo(req, res) {
 
       res.end(
         JSON.stringify({
-          message:
-            "Erreur lors de la création du todo"
+          message: "Erreur lors de la création du todo"
         })
       );
     }
   });
 }
 
+
 // PUT 
-export async function editTodo(req, res, id) {
+export async function editTodo(req, res, id, userId) {
   let body = "";
 
   req.on("data", (chunk) => {
@@ -206,8 +207,7 @@ export async function editTodo(req, res, id) {
 
           return res.end(
             JSON.stringify({
-              message:
-                "completed doit être un booléen"
+              message: "completed doit être un booléen"
             })
           );
         }
@@ -222,15 +222,15 @@ export async function editTodo(req, res, id) {
 
         return res.end(
           JSON.stringify({
-            message:
-              "Aucune donnée valide à modifier"
+            message: "Aucune donnée valide à modifier"
           })
         );
       }
 
       const updated = await updateTodo(
         id,
-        allowedUpdates
+        allowedUpdates,
+        userId
       );
 
       if (!updated) {
@@ -260,18 +260,18 @@ export async function editTodo(req, res, id) {
 
       res.end(
         JSON.stringify({
-          message:
-            "Erreur lors de la modification du todo"
+          message: "Erreur lors de la modification du todo"
         })
       );
     }
   });
 }
 
-// DELETE
-export async function removeTodo(req, res, id) {
+
+// DELETE 
+export async function removeTodo(req, res, id, userId) {
   try {
-    const deleted = await deleteTodo(id);
+    const deleted = await deleteTodo(id, userId);
 
     if (!deleted) {
       res.writeHead(404, {
@@ -305,8 +305,7 @@ export async function removeTodo(req, res, id) {
 
     res.end(
       JSON.stringify({
-        message:
-          "Erreur lors de la suppression du todo"
+        message: "Erreur lors de la suppression du todo"
       })
     );
   }

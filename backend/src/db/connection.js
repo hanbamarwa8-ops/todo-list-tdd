@@ -18,7 +18,7 @@ export async function connectDB() {
 
   try {
     await client.connect();
-    db = client.db(); 
+    db = client.db();
     console.log("Connecté à MongoDB Atlas");
     return db;
   } catch (error) {
