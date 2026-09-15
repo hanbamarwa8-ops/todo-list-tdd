@@ -6,16 +6,32 @@ function useAuth() {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Lors de chargement de l'app, on vérifie si un cookie de session valide existe déjà ou pas 
   useEffect(() => {
     checkSession();
-  }, []);
+}, []);
 
   const checkSession = async () => {
     try {
-      const response = await fetch(`${AUTH_URL}/me`, {
-        credentials: "include" //<!> Essenciel pour envoyer le cookie httpOnly
+      let response = await fetch(`${AUTH_URL}/me`, {
+        credentials: "include"
       });
+
+      if (response.status === 401) {
+        console.log("Access Token expiré, tentative de refresh...");
+
+        const refreshResponse = await fetch(`${AUTH_URL}/refresh`, {
+          method: "POST",
+          credentials: "include"
+        });
+
+        if (refreshResponse.ok) {
+          console.log("Access Token renouvelé");
+
+          response = await fetch(`${AUTH_URL}/me`, {
+            credentials: "include"
+          });
+        }
+      }
 
       if (response.ok) {
         const data = await response.json();
@@ -23,7 +39,9 @@ function useAuth() {
       } else {
         setUser(null);
       }
+
     } catch (error) {
+      console.error("Erreur lors de la vérification de session :", error);
       setUser(null);
     } finally {
       setIsLoading(false);
@@ -33,7 +51,9 @@ function useAuth() {
   const login = async (email, password) => {
     const response = await fetch(`${AUTH_URL}/login`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json"
+      },
       credentials: "include",
       body: JSON.stringify({ email, password })
     });
@@ -51,7 +71,9 @@ function useAuth() {
   const signup = async (name, email, password) => {
     const response = await fetch(`${AUTH_URL}/signup`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json"
+      },
       credentials: "include",
       body: JSON.stringify({ name, email, password })
     });
@@ -75,7 +97,8 @@ function useAuth() {
     setUser(null);
   };
 
-  return { user, isLoading, login, signup, logout };
+  return {
+    user,isLoading,login,signup,logout};
 }
 
 export default useAuth;

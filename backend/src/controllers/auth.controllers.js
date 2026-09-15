@@ -6,15 +6,32 @@ import {
     setResetToken,
     findUserByResetToken,
     updatePassword
-} from "../models/user.model.js";
-  import { generateToken, verifyToken } from "../utils/jwt.js";
-  import { parseCookies, serializeCookie } from "../utils/cookies.js";
+  } from "../models/user.model.js";
+  
+  import {
+    generateAccessToken,
+    generateRefreshToken,
+    verifyAccessToken,
+    verifyRefreshToken
+  } from "../utils/jwt.js";
+  
+  import {
+    parseCookies,
+    setAuthCookies,
+    clearAuthCookies
+  } from "../utils/cookies.js";
+  
   import { sendResetEmail } from "../utils/email.js";
+  
   
   function readBody(req) {
     return new Promise((resolve, reject) => {
       let body = "";
-      req.on("data", (chunk) => (body += chunk.toString()));
+  
+      req.on("data", (chunk) => {
+        body += chunk.toString();
+      });
+  
       req.on("end", () => {
         try {
           resolve(body ? JSON.parse(body) : {});
@@ -22,33 +39,13 @@ import {
           reject(new Error("Body JSON invalide"));
         }
       });
+  
       req.on("error", reject);
     });
   }
   
-  function setAuthCookie(res, token) {
-    const cookie = serializeCookie("token", token, {
-      httpOnly: true, // inaccessible en Js  navigateur
-      secure: process.env.NODE_ENV === "production", 
-      sameSite: "Lax",
-      maxAge: 60 * 60 * 24 * 7, 
-      path: "/"
-    });
   
-    res.setHeader("Set-Cookie", cookie);
-  }
-  
-  function clearAuthCookie(res) {
-    const cookie = serializeCookie("token", "", {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "Lax",
-      maxAge: 0,
-      path: "/"
-    });
-  
-    res.setHeader("Set-Cookie", cookie);
-  }
+  //->SIGNUP
   
   export async function signup(req, res) {
     try {
@@ -56,27 +53,74 @@ import {
       const { name, email, password } = body;
   
       if (!name || !email || !password) {
-        res.writeHead(400, { "Content-Type": "application/json" });
-        return res.end(JSON.stringify({ message: "Nom, email et mot de passe sont requis" }));
+        res.writeHead(400, {
+          "Content-Type": "application/json"
+        });
+  
+        return res.end(
+          JSON.stringify({
+            message: "Nom, email et mot de passe sont requis"
+          })
+        );
       }
   
       if (password.length < 8) {
-        res.writeHead(400, { "Content-Type": "application/json" });
-        return res.end(JSON.stringify({ message: "Le mot de passe doit faire au moins 8 caractères" }));
+        res.writeHead(400, {
+          "Content-Type": "application/json"
+        });
+  
+        return res.end(
+          JSON.stringify({
+            message: "Le mot de passe doit faire au moins 8 caractères"
+          })
+        );
       }
   
-      const user = await createUser({ name, email, password });
-      const token = generateToken({ userId: user.id });
+      const user = await createUser({
+        name,
+        email,
+        password
+      });
   
-      setAuthCookie(res, token);
+      const accessToken = generateAccessToken({
+        userId: user.id
+      });
   
-      res.writeHead(201, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ user }));
+      const refreshToken = generateRefreshToken({
+        userId: user.id
+      });
+  
+      setAuthCookies(
+        res,
+        accessToken,
+        refreshToken
+      );
+  
+      res.writeHead(201, {
+        "Content-Type": "application/json"
+      });
+  
+      res.end(
+        JSON.stringify({
+          user
+        })
+      );
+  
     } catch (error) {
-      res.writeHead(400, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ message: error.message }));
+      res.writeHead(400, {
+        "Content-Type": "application/json"
+      });
+  
+      res.end(
+        JSON.stringify({
+          message: error.message
+        })
+      );
     }
   }
+  
+  
+  //->LOGIN
   
   export async function login(req, res) {
     try {
@@ -84,75 +128,260 @@ import {
       const { email, password } = body;
   
       if (!email || !password) {
-        res.writeHead(400, { "Content-Type": "application/json" });
-        return res.end(JSON.stringify({ message: "Email et mot de passe sont requis" }));
+        res.writeHead(400, {
+          "Content-Type": "application/json"
+        });
+  
+        return res.end(
+          JSON.stringify({
+            message: "Email et mot de passe sont requis"
+          })
+        );
       }
   
       const user = await findUserByEmail(email);
+  
       if (!user) {
-        res.writeHead(401, { "Content-Type": "application/json" });
-        return res.end(JSON.stringify({ message: "Email ou mot de passe incorrect" }));
+        res.writeHead(401, {
+          "Content-Type": "application/json"
+        });
+  
+        return res.end(
+          JSON.stringify({
+            message: "Email ou mot de passe incorrect"
+          })
+        );
       }
   
-      const isValid = await verifyPassword(password, user.password);
+      const isValid = await verifyPassword(
+        password,
+        user.password
+      );
+  
       if (!isValid) {
-        res.writeHead(401, { "Content-Type": "application/json" });
-        return res.end(JSON.stringify({ message: "Email ou mot de passe incorrect" }));
+        res.writeHead(401, {
+          "Content-Type": "application/json"
+        });
+  
+        return res.end(
+          JSON.stringify({
+            message: "Email ou mot de passe incorrect"
+          })
+        );
       }
   
-      const token = generateToken({ userId: user._id.toString() });
-      setAuthCookie(res, token);
+      const accessToken = generateAccessToken({
+        userId: user._id.toString()
+      });
   
-      res.writeHead(200, { "Content-Type": "application/json" });
+      const refreshToken = generateRefreshToken({
+        userId: user._id.toString()
+      });
+  
+      setAuthCookies(
+        res,
+        accessToken,
+        refreshToken
+      );
+  
+      res.writeHead(200, {
+        "Content-Type": "application/json"
+      });
+  
       res.end(
         JSON.stringify({
-          user: { id: user._id.toString(), name: user.name, email: user.email }
+          user: {
+            id: user._id.toString(),
+            name: user.name,
+            email: user.email
+          }
         })
       );
+  
     } catch (error) {
-      res.writeHead(500, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ message: "Erreur lors de la connexion" }));
+      console.error(error);
+  
+      res.writeHead(500, {
+        "Content-Type": "application/json"
+      });
+  
+      res.end(
+        JSON.stringify({
+          message: "Erreur lors de la connexion"
+        })
+      );
     }
   }
   
-  export async function logout(req, res) {
-    clearAuthCookie(res);
-    res.writeHead(200, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ message: "Déconnecté" }));
+  
+  //-> REFRESH TOKEN
+  
+  
+  export async function refresh(req, res) {
+    try {
+      const cookies = parseCookies(req);
+      const refreshToken = cookies.refreshToken;
+  
+      if (!refreshToken) {
+        res.writeHead(401, {
+          "Content-Type": "application/json"
+        });
+  
+        return res.end(
+          JSON.stringify({
+            message: "Refresh token manquant"
+          })
+        );
+      }
+  
+      const payload = verifyRefreshToken(
+        refreshToken
+      );
+  
+      const user = await findUserById(
+        payload.userId
+      );
+  
+      if (!user) {
+        res.writeHead(401, {
+          "Content-Type": "application/json"
+        });
+  
+        return res.end(
+          JSON.stringify({
+            message: "Utilisateur introuvable"
+          })
+        );
+      }
+  
+      const newAccessToken =
+        generateAccessToken({
+          userId: payload.userId
+        });
+  
+      const isProduction =
+        process.env.NODE_ENV === "production";
+  
+      const accessCookie =
+        `accessToken=${encodeURIComponent(newAccessToken)}; ` +
+        `Max-Age=900; ` +
+        `Path=/; ` +
+        `HttpOnly; ` +
+        `${isProduction ? "Secure; " : ""}` +
+        `SameSite=Lax`;
+  
+      res.writeHead(200, {
+        "Content-Type": "application/json",
+        "Set-Cookie": accessCookie
+      });
+  
+      res.end(
+        JSON.stringify({
+          message: "Access token renouvelé"
+        })
+      );
+  
+    } catch (error) {
+      console.error(error);
+  
+      res.writeHead(401, {
+        "Content-Type": "application/json"
+      });
+  
+      res.end(
+        JSON.stringify({
+          message: "Refresh token invalide ou expiré"
+        })
+      );
+    }
   }
   
-  // Vérifie si l'utilisateur est connecté en faisant la lecture de cookie httpOnly
+  
+  //-> LOGOUT
+  
+  export async function logout(req, res) {
+    clearAuthCookies(res);
+  
+    res.writeHead(200, {
+      "Content-Type": "application/json"
+    });
+  
+    res.end(
+      JSON.stringify({
+        message: "Déconnecté"
+      })
+    );
+  }
+  
+  
+  //-> USER
+  
   export async function me(req, res) {
     try {
       const cookies = parseCookies(req);
-      const token = cookies.token;
+      const accessToken = cookies.accessToken;
   
-      if (!token) {
-        res.writeHead(401, { "Content-Type": "application/json" });
-        return res.end(JSON.stringify({ message: "Non authentifié" }));
+      if (!accessToken) {
+        res.writeHead(401, {
+          "Content-Type": "application/json"
+        });
+  
+        return res.end(
+          JSON.stringify({
+            message: "Non authentifié"
+          })
+        );
       }
   
-      const payload = verifyToken(token);
-      const user = await findUserById(payload.userId);
+      const payload =
+        verifyAccessToken(accessToken);
+  
+      const user = await findUserById(
+        payload.userId
+      );
   
       if (!user) {
-        res.writeHead(401, { "Content-Type": "application/json" });
-        return res.end(JSON.stringify({ message: "Utilisateur introuvable" }));
+        res.writeHead(401, {
+          "Content-Type": "application/json"
+        });
+  
+        return res.end(
+          JSON.stringify({
+            message: "Utilisateur introuvable"
+          })
+        );
       }
   
-      res.writeHead(200, { "Content-Type": "application/json" });
+      res.writeHead(200, {
+        "Content-Type": "application/json"
+      });
+  
       res.end(
         JSON.stringify({
-          user: { id: user._id.toString(), name: user.name, email: user.email }
+          user: {
+            id: user._id.toString(),
+            name: user.name,
+            email: user.email
+          }
         })
       );
+  
     } catch (error) {
-      res.writeHead(401, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ message: "Session invalide ou expirée" }));
+      res.writeHead(401, {
+        "Content-Type": "application/json"
+      });
+  
+      res.end(
+        JSON.stringify({
+          message: "Access token invalide ou expiré"
+        })
+      );
     }
   }
   
-  // Partie mot de passe oublié
+  
+  //-> MOT DE PASSE OUBLIÉ
+  
   
   export async function forgotPassword(req, res) {
     try {
@@ -160,52 +389,124 @@ import {
       const { email } = body;
   
       if (!email) {
-        res.writeHead(400, { "Content-Type": "application/json" });
-        return res.end(JSON.stringify({ message: "Email requis" }));
+        res.writeHead(400, {
+          "Content-Type": "application/json"
+        });
+  
+        return res.end(
+          JSON.stringify({
+            message: "Email requis"
+          })
+        );
       }
   
       const rawToken = await setResetToken(email);
   
-     
       if (rawToken) {
-        const resetLink = `${process.env.FRONTEND_URL}/reset-password/${rawToken}`;
-        await sendResetEmail(email, resetLink);
+        const resetLink =
+          `${process.env.FRONTEND_URL}/reset-password/${rawToken}`;
+  
+        await sendResetEmail(
+          email,
+          resetLink
+        );
       }
   
-      res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ message: "Si ce compte existe, un email a été envoyé." }));
+      res.writeHead(200, {
+        "Content-Type": "application/json"
+      });
+  
+      res.end(
+        JSON.stringify({
+          message:
+            "Si ce compte existe, un email a été envoyé."
+        })
+      );
+  
     } catch (error) {
       console.error(error);
-      res.writeHead(500, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ message: "Erreur lors de l'envoi de l'email" }));
+  
+      res.writeHead(500, {
+        "Content-Type": "application/json"
+      });
+  
+      res.end(
+        JSON.stringify({
+          message:
+            "Erreur lors de l'envoi de l'email"
+        })
+      );
     }
   }
   
-  export async function resetPassword(req, res, token) {
+  
+  //-> RESET PASSWORD
+
+  export async function resetPassword(
+    req,
+    res,
+    token
+  ) {
     try {
       const body = await readBody(req);
       const { password } = body;
   
       if (!password || password.length < 8) {
-        res.writeHead(400, { "Content-Type": "application/json" });
+        res.writeHead(400, {
+          "Content-Type": "application/json"
+        });
+  
         return res.end(
-          JSON.stringify({ message: "Le mot de passe doit faire au moins 8 caractères" })
+          JSON.stringify({
+            message:
+              "Le mot de passe doit faire au moins 8 caractères"
+          })
         );
       }
   
-      const user = await findUserByResetToken(token);
+      const user =
+        await findUserByResetToken(token);
+  
       if (!user) {
-        res.writeHead(400, { "Content-Type": "application/json" });
-        return res.end(JSON.stringify({ message: "Lien invalide ou expiré" }));
+        res.writeHead(400, {
+          "Content-Type": "application/json"
+        });
+  
+        return res.end(
+          JSON.stringify({
+            message: "Lien invalide ou expiré"
+          })
+        );
       }
   
-      await updatePassword(user._id, password);
+      await updatePassword(
+        user._id,
+        password
+      );
   
-      res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ message: "Mot de passe mis à jour avec succès" }));
+      res.writeHead(200, {
+        "Content-Type": "application/json"
+      });
+  
+      res.end(
+        JSON.stringify({
+          message:
+            "Mot de passe mis à jour avec succès"
+        })
+      );
+  
     } catch (error) {
       console.error(error);
-      res.writeHead(500, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ message: "Erreur lors de la réinitialisation" }));
+  
+      res.writeHead(500, {
+        "Content-Type": "application/json"
+      });
+  
+      res.end(
+        JSON.stringify({
+          message:
+            "Erreur lors de la réinitialisation"
+        })
+      );
     }
   }
