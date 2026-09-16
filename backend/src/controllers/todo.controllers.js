@@ -1,7 +1,7 @@
 import {getAllTodos,getTodoById,createTodo,updateTodo,deleteTodo} from "../models/todo.model.js";
 
-// GET 
-// Récupérer les taches de user connecté
+// GET
+// Récupérer les tâches du user connecté
 export async function getTodos(req, res, userId) {
   try {
     const todos = await getAllTodos(userId);
@@ -67,7 +67,7 @@ export async function getTodo(req, res, id, userId) {
 }
 
 
-// POST 
+// POST
 export async function addTodo(req, res, userId) {
   let body = "";
 
@@ -136,7 +136,7 @@ export async function addTodo(req, res, userId) {
 }
 
 
-// PUT 
+// PUT
 export async function editTodo(req, res, id, userId) {
   let body = "";
 
@@ -227,10 +227,11 @@ export async function editTodo(req, res, id, userId) {
         );
       }
 
+    
       const updated = await updateTodo(
         id,
-        allowedUpdates,
-        userId
+        userId,
+        allowedUpdates
       );
 
       if (!updated) {
@@ -268,7 +269,7 @@ export async function editTodo(req, res, id, userId) {
 }
 
 
-// DELETE 
+// DELETE
 export async function removeTodo(req, res, id, userId) {
   try {
     const deleted = await deleteTodo(id, userId);

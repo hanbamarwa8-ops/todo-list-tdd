@@ -1,8 +1,18 @@
 import app from "../src/app.js";
-import { connectDB, closeDB, getDB } from "../src/db/connection.js";
+import {connectDB,closeDB,getDB} from "../src/db/connection.js";
 import { ObjectId } from "mongodb";
+import { generateAccessToken } from "../src/utils/jwt.js";
 
 const NON_EXISTENT_ID = "507f1f77bcf86cd799439011";
+
+// User fictif pour les tests
+const TEST_USER_ID = new ObjectId().toString();
+
+const TEST_ACCESS_TOKEN = generateAccessToken({
+  userId: TEST_USER_ID
+});
+
+const TEST_COOKIE = `accessToken=${TEST_ACCESS_TOKEN}`;
 
 let port;
 let createdIds = [];
@@ -21,9 +31,13 @@ beforeAll(async () => {
 afterEach(async () => {
   if (createdIds.length > 0) {
     const db = getDB();
+
     await db.collection("todos").deleteMany({
-      _id: { $in: createdIds.map((id) => new ObjectId(id)) }
+      _id: {
+        $in: createdIds.map((id) => new ObjectId(id))
+      }
     });
+
     createdIds = [];
   }
 });
@@ -39,14 +53,27 @@ afterAll(async () => {
 describe("Todo API - Tests d'intégration", () => {
 
   test("POST /api/todos - doit créer un nouveau todo", async () => {
-    const response = await fetch(`http://localhost:${port}/api/todos`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title: "Apprendre les tests d'intégration" })
-    });
+
+    const response = await fetch(
+      `http://localhost:${port}/api/todos`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Cookie": TEST_COOKIE
+        },
+
+        body: JSON.stringify({
+          title: "Apprendre les tests d'intégration"
+        })
+      }
+    );
 
     const data = await response.json();
-    createdIds.push(data.id);
+
+    if (data.id) {
+      createdIds.push(data.id);
+    }
 
     expect(response.status).toBe(201);
     expect(data.id).toEqual(expect.any(String));
@@ -54,25 +81,56 @@ describe("Todo API - Tests d'intégration", () => {
     expect(data.completed).toBe(false);
   });
 
+
   test("GET /api/todos - doit récupérer tous les todos", async () => {
-    const response = await fetch(`http://localhost:${port}/api/todos`);
+
+    const response = await fetch(
+      `http://localhost:${port}/api/todos`,
+      {
+        headers: {
+          "Cookie": TEST_COOKIE
+        }
+      }
+    );
+
     const data = await response.json();
 
     expect(response.status).toBe(200);
     expect(Array.isArray(data)).toBe(true);
   });
 
+
   test("GET /api/todos/:id - doit récupérer un todo par son ID", async () => {
-    const createResponse = await fetch(`http://localhost:${port}/api/todos`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title: "Todo à récupérer" })
-    });
+
+    const createResponse = await fetch(
+      `http://localhost:${port}/api/todos`,
+      {
+        method: "POST",
+
+        headers: {
+          "Content-Type": "application/json",
+          "Cookie": TEST_COOKIE
+        },
+
+        body: JSON.stringify({
+          title: "Todo à récupérer"
+        })
+      }
+    );
 
     const createdTodo = await createResponse.json();
+
     createdIds.push(createdTodo.id);
 
-    const response = await fetch(`http://localhost:${port}/api/todos/${createdTodo.id}`);
+    const response = await fetch(
+      `http://localhost:${port}/api/todos/${createdTodo.id}`,
+      {
+        headers: {
+          "Cookie": TEST_COOKIE
+        }
+      }
+    );
+
     const data = await response.json();
 
     expect(response.status).toBe(200);
@@ -81,29 +139,63 @@ describe("Todo API - Tests d'intégration", () => {
     expect(data.completed).toBe(false);
   });
 
+
   test("GET /api/todos/:id - doit retourner 404 si le todo n'existe pas", async () => {
-    const response = await fetch(`http://localhost:${port}/api/todos/${NON_EXISTENT_ID}`);
+
+    const response = await fetch(
+      `http://localhost:${port}/api/todos/${NON_EXISTENT_ID}`,
+      {
+        headers: {
+          "Cookie": TEST_COOKIE
+        }
+      }
+    );
+
     const data = await response.json();
 
     expect(response.status).toBe(404);
     expect(data.message).toBe("Todo non trouvé");
   });
 
+
   test("PUT /api/todos/:id - doit modifier un todo", async () => {
-    const createResponse = await fetch(`http://localhost:${port}/api/todos`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title: "Todo avant modification" })
-    });
+
+    const createResponse = await fetch(
+      `http://localhost:${port}/api/todos`,
+      {
+        method: "POST",
+
+        headers: {
+          "Content-Type": "application/json",
+          "Cookie": TEST_COOKIE
+        },
+
+        body: JSON.stringify({
+          title: "Todo avant modification"
+        })
+      }
+    );
 
     const createdTodo = await createResponse.json();
+
     createdIds.push(createdTodo.id);
 
-    const response = await fetch(`http://localhost:${port}/api/todos/${createdTodo.id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title: "Todo après modification", completed: true })
-    });
+    const response = await fetch(
+      `http://localhost:${port}/api/todos/${createdTodo.id}`,
+      {
+        method: "PUT",
+
+        headers: {
+          "Content-Type": "application/json",
+          "Cookie": TEST_COOKIE
+        },
+
+        body: JSON.stringify({
+          title: "Todo après modification",
+          completed: true
+        })
+      }
+    );
 
     const data = await response.json();
 
@@ -113,18 +205,37 @@ describe("Todo API - Tests d'intégration", () => {
     expect(data.completed).toBe(true);
   });
 
+
   test("DELETE /api/todos/:id - doit supprimer un todo", async () => {
-    const createResponse = await fetch(`http://localhost:${port}/api/todos`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title: "Todo à supprimer" })
-    });
+
+    const createResponse = await fetch(
+      `http://localhost:${port}/api/todos`,
+      {
+        method: "POST",
+
+        headers: {
+          "Content-Type": "application/json",
+          "Cookie": TEST_COOKIE
+        },
+
+        body: JSON.stringify({
+          title: "Todo à supprimer"
+        })
+      }
+    );
 
     const createdTodo = await createResponse.json();
 
-    const response = await fetch(`http://localhost:${port}/api/todos/${createdTodo.id}`, {
-      method: "DELETE"
-    });
+    createdIds.push(createdTodo.id);
+
+    const response = await fetch(
+      `http://localhost:${port}/api/todos/${createdTodo.id}`,
+      {
+        method: "DELETE",
+
+        headers: {"Cookie": TEST_COOKIE}
+      }
+    );
 
     const data = await response.json();
 
@@ -133,12 +244,24 @@ describe("Todo API - Tests d'intégration", () => {
     expect(data.todo.id).toBe(createdTodo.id);
   });
 
+
   test("PUT /api/todos/:id - doit retourner 404 si le todo n'existe pas", async () => {
-    const response = await fetch(`http://localhost:${port}/api/todos/${NON_EXISTENT_ID}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title: "Test" })
-    });
+
+    const response = await fetch(
+      `http://localhost:${port}/api/todos/${NON_EXISTENT_ID}`,
+      {
+        method: "PUT",
+
+        headers: {
+          "Content-Type": "application/json",
+          "Cookie": TEST_COOKIE
+        },
+
+        body: JSON.stringify({
+          title: "Test"
+        })
+      }
+    );
 
     const data = await response.json();
 
@@ -146,10 +269,16 @@ describe("Todo API - Tests d'intégration", () => {
     expect(data.message).toBe("Todo non trouvé");
   });
 
+
   test("DELETE /api/todos/:id - doit retourner 404 si le todo n'existe pas", async () => {
-    const response = await fetch(`http://localhost:${port}/api/todos/${NON_EXISTENT_ID}`, {
-      method: "DELETE"
-    });
+
+    const response = await fetch(
+      `http://localhost:${port}/api/todos/${NON_EXISTENT_ID}`,
+      {
+        method: "DELETE",
+        headers: {"Cookie": TEST_COOKIE }
+      }
+    );
 
     const data = await response.json();
 

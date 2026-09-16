@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 
-const AUTH_URL = "http://localhost:3001/api/auth";
-
+const AUTH_URL =
+  `${process.env.REACT_APP_API_URL || "http://localhost:3001"}/api/auth`;
 function useAuth() {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);

@@ -14,7 +14,7 @@ export function generateAccessToken(payload) {
     {...payload,type: "access"
     },
     JWT_SECRET,
-    {expiresIn: ACCESS_TOKEN_EXPIRES_IN ="30s"}
+    {expiresIn: ACCESS_TOKEN_EXPIRES_IN }
   );
 }
 

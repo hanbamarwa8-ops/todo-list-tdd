@@ -70,7 +70,7 @@ export async function createTodo(title, userId) {
 }
 
 // UPDATE
-export async function updateTodo(id, updates, userId) {
+export async function updateTodo(id, userId, updates) {
   if (!ObjectId.isValid(id) || !ObjectId.isValid(userId)) {
     return null;
   }
