@@ -30,7 +30,7 @@ jobs:
           MONGODB_URI: ${{ secrets.MONGODB_URI }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
 
-  e2e:
+   e2e:
     runs-on: ubuntu-latest
 
     steps:
@@ -50,32 +50,11 @@ jobs:
         working-directory: ./frontend
         run: npm ci
 
-      - name: Installer les navigateurs Playwright
+      - name: Installer Chromium
         working-directory: ./backend
         run: npx playwright install --with-deps chromium
 
-      - name: Démarrer le backend
-        working-directory: ./backend
-        run: |
-          node server.js > backend.log 2>&1 &
-          sleep 5
-          cat backend.log
-        env:
-          MONGODB_URI: ${{ secrets.MONGODB_URI }}
-          JWT_SECRET: ${{ secrets.JWT_SECRET }}
-
-      - name: Démarrer le frontend
-        working-directory: ./frontend
-        run: npm start > frontend.log 2>&1 &
-        env:
-          CI: false
-
-      - name: Attendre les serveurs
-        run: |
-          npx wait-on http://localhost:3001
-          npx wait-on http://localhost:3000
-
-      - name: Lancer les tests end-to-end
+      - name: Lancer les tests E2E
         working-directory: ./backend
         run: npx playwright test
         env:
