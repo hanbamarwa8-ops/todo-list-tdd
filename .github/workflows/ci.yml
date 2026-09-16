@@ -59,6 +59,7 @@ jobs:
       - name: Lancer les tests E2E
         working-directory: ./backend
         run: npx playwright test
-        env:          CI: true
+        env:
+          CI: true
           MONGODB_URI: ${{ secrets.MONGODB_URI }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
