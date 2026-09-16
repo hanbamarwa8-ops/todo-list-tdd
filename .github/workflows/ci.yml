@@ -2,9 +2,11 @@ name: CI - Tests
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
   pull_request:
-    branches: [main]
+    branches:
+      - main
 
 jobs:
   unit-and-integration:
@@ -30,7 +32,7 @@ jobs:
           MONGODB_URI: ${{ secrets.MONGODB_URI }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
 
-   e2e:
+  e2e:
     runs-on: ubuntu-latest
 
     steps:
