@@ -1,52 +1,84 @@
-e2e:
-  runs-on: ubuntu-latest
+name: CI - Tests
 
-  steps:
-    - name: Récupérer le code
-      uses: actions/checkout@v4
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
 
-    - name: Installer Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: 20
+jobs:
+  unit-and-integration:
+    runs-on: ubuntu-latest
 
-    - name: Installer les dépendances backend
-      working-directory: ./backend
-      run: npm ci
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
 
-    - name: Installer les dépendances frontend
-      working-directory: ./frontend
-      run: npm ci
+      - name: Installer Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
 
-    - name: Installer les navigateurs Playwright
-      working-directory: ./backend
-      run: npx playwright install --with-deps chromium
+      - name: Installer les dépendances backend
+        working-directory: ./backend
+        run: npm ci
 
-    - name: Démarrer le backend
-      working-directory: ./backend
-      run: |
-        node server.js > backend.log 2>&1 &
-        sleep 5
-        cat backend.log
-      env:
-        MONGODB_URI: ${{ secrets.MONGODB_URI }}
-        JWT_SECRET: ${{ secrets.JWT_SECRET }}
+      - name: Lancer les tests unitaires et d'intégration
+        working-directory: ./backend
+        run: npm test
+        env:
+          MONGODB_URI: ${{ secrets.MONGODB_URI }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
 
-    - name: Démarrer le frontend
-      working-directory: ./frontend
-      run: npm start > frontend.log 2>&1 &
-      env:
-        CI: false
+  e2e:
+    runs-on: ubuntu-latest
 
-    - name: Attendre les serveurs
-      run: |
-        npx wait-on http://localhost:3001
-        npx wait-on http://localhost:3000
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
 
-    - name: Lancer les tests end-to-end
-      working-directory: ./backend
-      run: npx playwright test
-      env:
-        CI: true
-        MONGODB_URI: ${{ secrets.MONGODB_URI }}
-        JWT_SECRET: ${{ secrets.JWT_SECRET }}
+      - name: Installer Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Installer les dépendances backend
+        working-directory: ./backend
+        run: npm ci
+
+      - name: Installer les dépendances frontend
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: Installer les navigateurs Playwright
+        working-directory: ./backend
+        run: npx playwright install --with-deps chromium
+
+      - name: Démarrer le backend
+        working-directory: ./backend
+        run: |
+          node server.js > backend.log 2>&1 &
+          sleep 5
+          cat backend.log
+        env:
+          MONGODB_URI: ${{ secrets.MONGODB_URI }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+
+      - name: Démarrer le frontend
+        working-directory: ./frontend
+        run: npm start > frontend.log 2>&1 &
+        env:
+          CI: false
+
+      - name: Attendre les serveurs
+        run: |
+          npx wait-on http://localhost:3001
+          npx wait-on http://localhost:3000
+
+      - name: Lancer les tests end-to-end
+        working-directory: ./backend
+        run: npx playwright test
+        env:
+          CI: true
+          MONGODB_URI: ${{ secrets.MONGODB_URI }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
