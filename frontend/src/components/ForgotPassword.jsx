@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import "./ForgotPassword.css";
 
-const AUTH_URL = "http://localhost:3001/api/auth";
+const AUTH_URL = `${process.env.REACT_APP_API_URL || "http://localhost:3001"}/api/auth`;
 
 function ForgotPassword() {
   const [email, setEmail] = useState("");
