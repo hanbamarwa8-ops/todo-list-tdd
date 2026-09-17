@@ -20,10 +20,7 @@ function useAuth() {
         setUser(null);
       }
     } catch (error) {
-      console.error(
-        "Erreur lors de la vérification de session :",
-        error
-      );
+      console.error("Erreur vérification session :", error);
       setUser(null);
     } finally {
       setIsLoading(false);
@@ -33,10 +30,10 @@ function useAuth() {
   const login = async (email, password) => {
     const response = await fetch(`${AUTH_URL}/login`, {
       method: "POST",
+      credentials: "include",
       headers: {
         "Content-Type": "application/json",
       },
-      credentials: "include",
       body: JSON.stringify({
         email,
         password,
@@ -46,22 +43,21 @@ function useAuth() {
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(
-        data.message || "Erreur de connexion"
-      );
+      throw new Error(data.message || "Erreur de connexion");
     }
 
     setUser(data.user);
-    return data.user;
+
+    return data;
   };
 
   const signup = async (name, email, password) => {
     const response = await fetch(`${AUTH_URL}/signup`, {
       method: "POST",
+      credentials: "include",
       headers: {
         "Content-Type": "application/json",
       },
-      credentials: "include",
       body: JSON.stringify({
         name,
         email,
@@ -72,13 +68,12 @@ function useAuth() {
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(
-        data.message || "Erreur lors de l'inscription"
-      );
+      throw new Error(data.message || "Erreur lors de l'inscription");
     }
 
     setUser(data.user);
-    return data.user;
+
+    return data;
   };
 
   const logout = async () => {
@@ -98,6 +93,7 @@ function useAuth() {
     login,
     signup,
     logout,
+    checkSession,
   };
 }
 

@@ -1,150 +1,41 @@
-export function parseCookies(req) {
-  const cookieHeader = req.headers.cookie;
-  const cookies = {};
+const isProduction = process.env.NODE_ENV === "production";
 
-  if (!cookieHeader) {
-    return cookies;
+export function setCookie(res, name, value, options = {}) {
+  const {
+    httpOnly = true,
+    secure = isProduction,
+    sameSite = isProduction ? "None" : "Lax",
+    maxAge,
+    path = "/",
+  } = options;
+
+  let cookie = `${name}=${encodeURIComponent(value)}; Path=${path}`;
+
+  if (httpOnly) {
+    cookie += "; HttpOnly";
   }
 
-  cookieHeader.split(";").forEach((pair) => {
-    const [
-      key,
-      ...valueParts
-    ] = pair.trim().split("=");
+  if (secure) {
+    cookie += "; Secure";
+  }
 
-    cookies[key] = decodeURIComponent(
-      valueParts.join("=")
-    );
-  });
+  if (sameSite) {
+    cookie += `; SameSite=${sameSite}`;
+  }
 
-  return cookies;
+  if (maxAge !== undefined) {
+    cookie += `; Max-Age=${maxAge}`;
+  }
+
+  res.setHeader("Set-Cookie", cookie);
 }
 
+export function clearCookie(res, name) {
+  const isProduction = process.env.NODE_ENV === "production";
 
-// Créer un cookie
-export function serializeCookie(
-  name,
-  value,
-  options = {}
-) {
-  const parts = [
-    `${name}=${encodeURIComponent(value)}`
-  ];
+  const cookie =
+    `${name}=; Path=/; Max-Age=0; HttpOnly` +
+    (isProduction ? "; Secure; SameSite=None" : "; SameSite=Lax");
 
-  if (options.maxAge !== undefined) {
-    parts.push(`Max-Age=${options.maxAge}`);
-  }
-
-  if (options.path) {
-    parts.push(`Path=${options.path}`);
-  }
-
-  if (options.httpOnly) {
-    parts.push("HttpOnly");
-  }
-
-  if (options.secure) {
-    parts.push("Secure");
-  }
-
-  if (options.sameSite) {
-    parts.push(
-      `SameSite=${options.sameSite}`
-    );
-  }
-
-  return parts.join("; ");
-}
-
-
-// Créer les cookies
-// Access Token + Refresh Token
-export function setAuthCookies(
-  res,
-  accessToken,
-  refreshToken
-) {
-  const isProduction =
-    process.env.NODE_ENV === "production";
-
-  const sameSite = isProduction
-    ? "None"
-    : "Lax";
-
-  const secure = isProduction;
-
-  const accessCookie =
-    serializeCookie(
-      "accessToken",
-      accessToken,
-      {
-        httpOnly: true,
-        secure,
-        sameSite,
-        path: "/",
-        maxAge: 900,
-      }
-    );
-
-  const refreshCookie =
-    serializeCookie(
-      "refreshToken",
-      refreshToken,
-      {
-        httpOnly: true,
-        secure,
-        sameSite,
-        path: "/",
-        maxAge: 604800,
-      }
-    );
-
-  res.setHeader("Set-Cookie", [
-    accessCookie,
-    refreshCookie,
-  ]);
-}
-
-
-// Supprimer les cookies
-export function clearAuthCookies(res) {
-  const isProduction =
-    process.env.NODE_ENV === "production";
-
-  const sameSite = isProduction
-    ? "None"
-    : "Lax";
-
-  const secure = isProduction;
-
-  const accessCookie =
-    serializeCookie(
-      "accessToken",
-      "",
-      {
-        httpOnly: true,
-        secure,
-        sameSite,
-        path: "/",
-        maxAge: 0,
-      }
-    );
-
-  const refreshCookie =
-    serializeCookie(
-      "refreshToken",
-      "",
-      {
-        httpOnly: true,
-        secure,
-        sameSite,
-        path: "/",
-        maxAge: 0,
-      }
-    );
-
-  res.setHeader("Set-Cookie", [
-    accessCookie,
-    refreshCookie,
-  ]);
+  res.setHeader("Set-Cookie", cookie);
 }

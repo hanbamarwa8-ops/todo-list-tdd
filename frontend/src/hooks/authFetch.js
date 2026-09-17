@@ -1,29 +1,35 @@
-const API_BASE_URL =
-  process.env.REACT_APP_API_URL || "http://localhost:3001/api";
+const API_URL =
+  process.env.REACT_APP_API_URL || "https://my-task-app-eta.vercel.app/api";
 
-const AUTH_URL = `${API_BASE_URL}/auth`;
+export const AUTH_URL = `${API_URL}/auth`;
 
 export async function authFetch(url, options = {}) {
-  let response = await fetch(url, {
+  const response = await fetch(url, {
     ...options,
     credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+      ...(options.headers || {}),
+    },
   });
 
-  if (response.status === 401) {
+  if (response.status === 401 && !url.includes("/refresh")) {
     const refreshResponse = await fetch(`${AUTH_URL}/refresh`, {
       method: "POST",
       credentials: "include",
     });
 
     if (refreshResponse.ok) {
-      response = await fetch(url, {
+      return fetch(url, {
         ...options,
         credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          ...(options.headers || {}),
+        },
       });
     }
   }
 
   return response;
 }
-
-export { API_BASE_URL, AUTH_URL };

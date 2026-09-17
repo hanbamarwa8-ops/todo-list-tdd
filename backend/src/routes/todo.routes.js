@@ -18,161 +18,88 @@ import {
 
 import { authenticate } from "../middleware/auth.middleware.js";
 
-const ALLOWED_ORIGIN =
-  process.env.FRONTEND_URL ||
-  "http://localhost:3000";
-
 export function router(req, res) {
   const { method, url } = req;
 
-  res.setHeader(
-    "Access-Control-Allow-Origin",
-    ALLOWED_ORIGIN
-  );
+  const allowedOrigin =
+    process.env.FRONTEND_URL || "http://localhost:3000";
 
+  res.setHeader("Access-Control-Allow-Origin", allowedOrigin);
+  res.setHeader("Access-Control-Allow-Credentials", "true");
   res.setHeader(
     "Access-Control-Allow-Methods",
     "GET, POST, PUT, DELETE, OPTIONS"
   );
-
   res.setHeader(
     "Access-Control-Allow-Headers",
-    "Content-Type"
-  );
-
-  res.setHeader(
-    "Access-Control-Allow-Credentials",
-    "true"
+    "Content-Type, Authorization"
   );
 
   if (method === "OPTIONS") {
     res.writeHead(204);
-    return res.end();
-  }
-
-  // ROUTES AUTH
-
-  if (
-    url === "/api/auth/signup" &&
-    method === "POST"
-  ) {
-    return signup(req, res);
-  }
-
-  if (
-    url === "/api/auth/login" &&
-    method === "POST"
-  ) {
-    return login(req, res);
-  }
-
-  if (
-    url === "/api/auth/logout" &&
-    method === "POST"
-  ) {
-    return logout(req, res);
-  }
-
-  if (
-    url === "/api/auth/me" &&
-    method === "GET"
-  ) {
-    return me(req, res);
-  }
-
-  if (
-    url === "/api/auth/refresh" &&
-    method === "POST"
-  ) {
-    return refresh(req, res);
-  }
-
-  if (
-    url === "/api/auth/forgot-password" &&
-    method === "POST"
-  ) {
-    return forgotPassword(req, res);
-  }
-
-  const resetMatch = url.match(
-    /^\/api\/auth\/reset-password\/([a-f0-9]{64})$/
-  );
-
-  if (
-    resetMatch &&
-    method === "POST"
-  ) {
-    return resetPassword(
-      req,
-      res,
-      resetMatch[1]
-    );
-  }
-
-  // AUTHENTIFICATION TODO
-
-  const userId = authenticate(req, res);
-
-  if (!userId) {
+    res.end();
     return;
   }
 
-  // ROUTES TODOS
+  //->AUTH
 
-  if (
-    url === "/api/todos" &&
-    method === "GET"
-  ) {
-    return getTodos(
-      req,
-      res,
-      userId
-    );
+  if (method === "POST" && url === "/api/auth/signup") {
+    return signup(req, res);
   }
 
-  if (
-    url === "/api/todos" &&
-    method === "POST"
-  ) {
-    return addTodo(
-      req,
-      res,
-      userId
-    );
+  if (method === "POST" && url === "/api/auth/login") {
+    return login(req, res);
   }
 
-  const match = url.match(
-    /^\/api\/todos\/([a-fA-F0-9]{24})$/
-  );
+  if (method === "POST" && url === "/api/auth/logout") {
+    return logout(req, res);
+  }
 
-  if (match) {
-    const id = match[1];
+  if (method === "GET" && url === "/api/auth/me") {
+    return me(req, res);
+  }
+
+  if (method === "POST" && url === "/api/auth/refresh") {
+    return refresh(req, res);
+  }
+
+  if (method === "POST" && url === "/api/auth/forgot-password") {
+    return forgotPassword(req, res);
+  }
+
+  // reset-password contient le token dans l'URL
+  if (
+    method === "POST" &&
+    url.startsWith("/api/auth/reset-password/")
+  ) {
+    return resetPassword(req, res);
+  }
+
+  //->TODOS
+
+  if (method === "GET" && url === "/api/todos") {
+    return authenticate(req, res, () => getTodos(req, res));
+  }
+
+  if (method === "POST" && url === "/api/todos") {
+    return authenticate(req, res, () => addTodo(req, res));
+  }
+
+  const todoMatch = url.match(/^\/api\/todos\/([a-fA-F0-9]{24})$/);
+
+  if (todoMatch) {
+    const id = todoMatch[1];
 
     if (method === "GET") {
-      return getTodo(
-        req,
-        res,
-        id,
-        userId
-      );
+      return authenticate(req, res, () => getTodo(req, res, id));
     }
 
     if (method === "PUT") {
-      return editTodo(
-        req,
-        res,
-        id,
-        userId
-      );
+      return authenticate(req, res, () => editTodo(req, res, id));
     }
 
     if (method === "DELETE") {
-      return removeTodo(
-        req,
-        res,
-        id,
-        userId
-      );
+      return authenticate(req, res, () => removeTodo(req, res, id));
     }
   }
 
