@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { AUTH_URL } from "../hooks/authFetch";
 import "./ForgotPassword.css";
-
-const AUTH_URL = `${process.env.REACT_APP_API_URL || "http://localhost:3001"}/api/auth`;
 
 function ForgotPassword() {
   const [email, setEmail] = useState("");
@@ -24,18 +23,26 @@ function ForgotPassword() {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch(`${AUTH_URL}/forgot-password`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email }),
-      });
+      const response = await fetch(
+        `${AUTH_URL}/forgot-password`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+          body: JSON.stringify({
+            email: email.trim(),
+          }),
+        }
+      );
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || "Une erreur est survenue");
+        throw new Error(
+          data.message || "Une erreur est survenue"
+        );
       }
 
       setMessage(data.message);
@@ -57,7 +64,9 @@ function ForgotPassword() {
       </p>
 
       <form onSubmit={handleSubmit}>
-        <label htmlFor="forgot-email">Email</label>
+        <label htmlFor="forgot-email">
+          Email
+        </label>
 
         <input
           id="forgot-email"
@@ -67,12 +76,25 @@ function ForgotPassword() {
           onChange={(e) => setEmail(e.target.value)}
         />
 
-        {error && <p className="field-error">{error}</p>}
+        {error && (
+          <p className="field-error">
+            {error}
+          </p>
+        )}
 
-        {message && <p className="success-message">{message}</p>}
+        {message && (
+          <p className="success-message">
+            {message}
+          </p>
+        )}
 
-        <button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? "Envoi..." : "Envoyer le lien"}
+        <button
+          type="submit"
+          disabled={isSubmitting}
+        >
+          {isSubmitting
+            ? "Envoi..."
+            : "Envoyer le lien"}
         </button>
       </form>
 
@@ -84,4 +106,3 @@ function ForgotPassword() {
 }
 
 export default ForgotPassword;
-

@@ -20,7 +20,10 @@ function useAuth() {
         setUser(null);
       }
     } catch (error) {
-      console.error("Erreur lors de la vérification de session :", error);
+      console.error(
+        "Erreur lors de la vérification de session :",
+        error
+      );
       setUser(null);
     } finally {
       setIsLoading(false);
@@ -30,15 +33,22 @@ function useAuth() {
   const login = async (email, password) => {
     const response = await fetch(`${AUTH_URL}/login`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+      },
       credentials: "include",
-      body: JSON.stringify({ email, password })
+      body: JSON.stringify({
+        email,
+        password,
+      }),
     });
 
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.message || "Erreur de connexion");
+      throw new Error(
+        data.message || "Erreur de connexion"
+      );
     }
 
     setUser(data.user);
@@ -48,15 +58,23 @@ function useAuth() {
   const signup = async (name, email, password) => {
     const response = await fetch(`${AUTH_URL}/signup`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+      },
       credentials: "include",
-      body: JSON.stringify({ name, email, password })
+      body: JSON.stringify({
+        name,
+        email,
+        password,
+      }),
     });
 
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.message || "Erreur lors de l'inscription");
+      throw new Error(
+        data.message || "Erreur lors de l'inscription"
+      );
     }
 
     setUser(data.user);
@@ -64,15 +82,23 @@ function useAuth() {
   };
 
   const logout = async () => {
-    await fetch(`${AUTH_URL}/logout`, {
-      method: "POST",
-      credentials: "include"
-    });
-
-    setUser(null);
+    try {
+      await fetch(`${AUTH_URL}/logout`, {
+        method: "POST",
+        credentials: "include",
+      });
+    } finally {
+      setUser(null);
+    }
   };
 
-  return { user, isLoading, login, signup, logout };
+  return {
+    user,
+    isLoading,
+    login,
+    signup,
+    logout,
+  };
 }
 
 export default useAuth;
