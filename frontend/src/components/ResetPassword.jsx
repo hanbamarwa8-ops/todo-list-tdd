@@ -2,7 +2,8 @@ import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import "./ResetPassword.css";
 
-const AUTH_URL = "http://localhost:3001/api/auth";
+const AUTH_URL =
+  `${process.env.REACT_APP_API_URL || "http://localhost:3001"}/api/auth`;
 
 function ResetPassword() {
   const { token } = useParams();
@@ -128,4 +129,3 @@ function ResetPassword() {
 }
 
 export default ResetPassword;
-
