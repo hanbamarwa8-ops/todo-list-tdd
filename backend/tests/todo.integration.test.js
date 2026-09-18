@@ -1,24 +1,49 @@
 import app from "../src/app.js";
 import {connectDB,closeDB,getDB} from "../src/db/connection.js";
 import { ObjectId } from "mongodb";
+import bcrypt from "bcryptjs";
 import { generateAccessToken } from "../src/utils/jwt.js";
 
 const NON_EXISTENT_ID = "507f1f77bcf86cd799439011";
 
-// User fictif pour les tests
-const TEST_USER_ID = new ObjectId().toString();
-
-const TEST_ACCESS_TOKEN = generateAccessToken({
-  userId: TEST_USER_ID
-});
-
-const TEST_COOKIE = `accessToken=${TEST_ACCESS_TOKEN}`;
+const TEST_USER_EMAIL = "test.integration@example.com";
+const TEST_USER_PASSWORD = "TestPassword123";
 
 let port;
 let createdIds = [];
+let testUserId;
+let TEST_COOKIE;
 
 beforeAll(async () => {
   await connectDB();
+
+  const db = getDB();
+
+  await db.collection("users").deleteOne({
+    email: TEST_USER_EMAIL
+  });
+
+  // Créer un vrai user dans MongoDB
+  const hashedPassword = await bcrypt.hash(
+    TEST_USER_PASSWORD,
+    10
+  );
+
+  const result = await db.collection("users").insertOne({
+    name: "Integration Test User",
+    email: TEST_USER_EMAIL,
+    password: hashedPassword,
+    role: "USER",
+    createdAt: new Date()
+  });
+
+  testUserId = result.insertedId.toString();
+
+  const testAccessToken = generateAccessToken({
+    userId: testUserId
+  });
+
+  TEST_COOKIE = `accessToken=${testAccessToken}`;
 
   await new Promise((resolve) => {
     app.listen(0, () => {
@@ -34,7 +59,9 @@ afterEach(async () => {
 
     await db.collection("todos").deleteMany({
       _id: {
-        $in: createdIds.map((id) => new ObjectId(id))
+        $in: createdIds.map(
+          (id) => new ObjectId(id)
+        )
       }
     });
 
@@ -43,6 +70,13 @@ afterEach(async () => {
 });
 
 afterAll(async () => {
+  const db = getDB();
+
+  // Supprimer l'user de test
+  await db.collection("users").deleteOne({
+    _id: new ObjectId(testUserId)
+  });
+
   await closeDB();
 
   await new Promise((resolve) => {
@@ -58,6 +92,7 @@ describe("Todo API - Tests d'intégration", () => {
       `http://localhost:${port}/api/todos`,
       {
         method: "POST",
+
         headers: {
           "Content-Type": "application/json",
           "Cookie": TEST_COOKIE
@@ -77,7 +112,9 @@ describe("Todo API - Tests d'intégration", () => {
 
     expect(response.status).toBe(201);
     expect(data.id).toEqual(expect.any(String));
-    expect(data.title).toBe("Apprendre les tests d'intégration");
+    expect(data.title).toBe(
+      "Apprendre les tests d'intégration"
+    );
     expect(data.completed).toBe(false);
   });
 
@@ -201,7 +238,9 @@ describe("Todo API - Tests d'intégration", () => {
 
     expect(response.status).toBe(200);
     expect(data.id).toBe(createdTodo.id);
-    expect(data.title).toBe("Todo après modification");
+    expect(data.title).toBe(
+      "Todo après modification"
+    );
     expect(data.completed).toBe(true);
   });
 
@@ -233,7 +272,9 @@ describe("Todo API - Tests d'intégration", () => {
       {
         method: "DELETE",
 
-        headers: {"Cookie": TEST_COOKIE}
+        headers: {
+          "Cookie": TEST_COOKIE
+        }
       }
     );
 
@@ -276,7 +317,10 @@ describe("Todo API - Tests d'intégration", () => {
       `http://localhost:${port}/api/todos/${NON_EXISTENT_ID}`,
       {
         method: "DELETE",
-        headers: {"Cookie": TEST_COOKIE }
+
+        headers: {
+          "Cookie": TEST_COOKIE
+        }
       }
     );
 

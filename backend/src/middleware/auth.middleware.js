@@ -1,6 +1,7 @@
 import { verifyAccessToken } from "../utils/jwt.js";
+import { findUserById } from "../models/user.model.js";
 
-export function authenticate(req, res) {
+export async function authenticate(req, res) {
   const cookies = req.headers.cookie;
 
   if (!cookies) {
@@ -44,8 +45,28 @@ export function authenticate(req, res) {
   try {
     const decoded = verifyAccessToken(token);
 
-    return decoded.userId;
+    const user = await findUserById(
+      decoded.userId
+    );
+
+    if (!user) {
+      res.writeHead(401, {
+        "Content-Type": "application/json"
+      });
+
+      res.end(
+        JSON.stringify({
+          message: "Utilisateur introuvable"
+        })
+      );
+
+      return null;
+    }
+
+    return user;
+
   } catch (error) {
+
     res.writeHead(401, {
       "Content-Type": "application/json"
     });
