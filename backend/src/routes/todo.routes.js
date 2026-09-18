@@ -21,11 +21,20 @@ import { authenticate } from "../middleware/auth.middleware.js";
 export function router(req, res) {
   const { method, url } = req;
 
+  // CORS
+
   const allowedOrigin =
     process.env.FRONTEND_URL || "http://localhost:3000";
 
-  res.setHeader("Access-Control-Allow-Origin", allowedOrigin);
-  res.setHeader("Access-Control-Allow-Credentials", "true");
+  res.setHeader(
+    "Access-Control-Allow-Origin",
+    allowedOrigin
+  );
+
+  res.setHeader(
+    "Access-Control-Allow-Credentials",
+    "true"
+  );
 
   res.setHeader(
     "Access-Control-Allow-Methods",
@@ -43,7 +52,7 @@ export function router(req, res) {
     return;
   }
 
-  //-> AUTH
+  // AUTH
 
   if (method === "POST" && url === "/api/auth/signup") {
     return signup(req, res);
@@ -65,7 +74,10 @@ export function router(req, res) {
     return refresh(req, res);
   }
 
-  if (method === "POST" && url === "/api/auth/forgot-password") {
+  if (
+    method === "POST" &&
+    url === "/api/auth/forgot-password"
+  ) {
     return forgotPassword(req, res);
   }
 
@@ -77,14 +89,26 @@ export function router(req, res) {
     return resetPassword(req, res, token);
   }
 
-  //-> TODOS
+  // TODOS
 
   if (method === "GET" && url === "/api/todos") {
-    return authenticate(req, res, () => getTodos(req, res));
+    const userId = authenticate(req, res);
+
+    if (!userId) {
+      return;
+    }
+
+    return getTodos(req, res, userId);
   }
 
   if (method === "POST" && url === "/api/todos") {
-    return authenticate(req, res, () => addTodo(req, res));
+    const userId = authenticate(req, res);
+
+    if (!userId) {
+      return;
+    }
+
+    return addTodo(req, res, userId);
   }
 
   const todoMatch = url.match(
@@ -94,24 +118,26 @@ export function router(req, res) {
   if (todoMatch) {
     const id = todoMatch[1];
 
+    const userId = authenticate(req, res);
+
+    if (!userId) {
+      return;
+    }
+
     if (method === "GET") {
-      return authenticate(req, res, () =>
-        getTodo(req, res, id)
-      );
+      return getTodo(req, res, id, userId);
     }
 
     if (method === "PUT") {
-      return authenticate(req, res, () =>
-        editTodo(req, res, id)
-      );
+      return editTodo(req, res, id, userId);
     }
 
     if (method === "DELETE") {
-      return authenticate(req, res, () =>
-        removeTodo(req, res, id)
-      );
+      return removeTodo(req, res, id, userId);
     }
   }
+
+  // 404
 
   res.writeHead(404, {
     "Content-Type": "application/json",

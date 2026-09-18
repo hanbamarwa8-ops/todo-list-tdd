@@ -27,15 +27,99 @@ export function setCookie(res, name, value, options = {}) {
     cookie += `; Max-Age=${maxAge}`;
   }
 
-  res.setHeader("Set-Cookie", cookie);
+  return cookie;
 }
 
-export function clearCookie(res, name) {
-  const isProduction = process.env.NODE_ENV === "production";
+export function parseCookies(req) {
+  const cookies = {};
 
-  const cookie =
-    `${name}=; Path=/; Max-Age=0; HttpOnly` +
-    (isProduction ? "; Secure; SameSite=None" : "; SameSite=Lax");
+  const cookieHeader = req.headers.cookie;
 
-  res.setHeader("Set-Cookie", cookie);
+  if (!cookieHeader) {
+    return cookies;
+  }
+
+  cookieHeader.split(";").forEach((cookie) => {
+    const [name, ...valueParts] = cookie.trim().split("=");
+
+    if (!name) {
+      return;
+    }
+
+    const value = valueParts.join("=");
+
+    cookies[name] = decodeURIComponent(value);
+  });
+
+  return cookies;
+}
+
+export function setAuthCookies(
+  res,
+  accessToken,
+  refreshToken
+) {
+  const accessCookie = setCookie(
+    res,
+    "accessToken",
+    accessToken,
+    {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: isProduction ? "None" : "Lax",
+      maxAge: 15 * 60,
+      path: "/",
+    }
+  );
+
+  const refreshCookie = setCookie(
+    res,
+    "refreshToken",
+    refreshToken,
+    {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: isProduction ? "None" : "Lax",
+      maxAge: 7 * 24 * 60 * 60,
+      path: "/",
+    }
+  );
+
+  res.setHeader("Set-Cookie", [
+    accessCookie,
+    refreshCookie,
+  ]);
+}
+
+export function clearAuthCookies(res) {
+  const accessCookie = setCookie(
+    res,
+    "accessToken",
+    "",
+    {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: isProduction ? "None" : "Lax",
+      maxAge: 0,
+      path: "/",
+    }
+  );
+
+  const refreshCookie = setCookie(
+    res,
+    "refreshToken",
+    "",
+    {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: isProduction ? "None" : "Lax",
+      maxAge: 0,
+      path: "/",
+    }
+  );
+
+  res.setHeader("Set-Cookie", [
+    accessCookie,
+    refreshCookie,
+  ]);
 }
