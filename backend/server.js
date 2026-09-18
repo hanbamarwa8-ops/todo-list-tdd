@@ -17,4 +17,3 @@ async function start() {
 }
 
 start();
-//->le serveur attend maintenant que la connexion MongoDB réussisse avant d'écouter sur le port
