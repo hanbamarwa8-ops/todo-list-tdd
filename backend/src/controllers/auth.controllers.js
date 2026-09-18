@@ -224,40 +224,35 @@ import {
   
       if (!refreshToken) {
         res.writeHead(401, {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
         });
   
         return res.end(
           JSON.stringify({
-            message: "Refresh token manquant"
+            message: "Refresh token manquant",
           })
         );
       }
   
-      const payload = verifyRefreshToken(
-        refreshToken
-      );
+      const payload = verifyRefreshToken(refreshToken);
   
-      const user = await findUserById(
-        payload.userId
-      );
+      const user = await findUserById(payload.userId);
   
       if (!user) {
         res.writeHead(401, {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
         });
   
         return res.end(
           JSON.stringify({
-            message: "Utilisateur introuvable"
+            message: "Utilisateur introuvable",
           })
         );
       }
   
-      const newAccessToken =
-        generateAccessToken({
-          userId: payload.userId
-        });
+      const newAccessToken = generateAccessToken({
+        userId: payload.userId,
+      });
   
       const isProduction =
         process.env.NODE_ENV === "production";
@@ -268,29 +263,28 @@ import {
         `Path=/; ` +
         `HttpOnly; ` +
         `${isProduction ? "Secure; " : ""}` +
-        `SameSite=Lax`;
+        `SameSite=${isProduction ? "None" : "Lax"}`;
   
       res.writeHead(200, {
         "Content-Type": "application/json",
-        "Set-Cookie": accessCookie
+        "Set-Cookie": accessCookie,
       });
   
       res.end(
         JSON.stringify({
-          message: "Access token renouvelé"
+          message: "Access token renouvelé",
         })
       );
-  
     } catch (error) {
       console.error(error);
   
       res.writeHead(401, {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
       });
   
       res.end(
         JSON.stringify({
-          message: "Refresh token invalide ou expiré"
+          message: "Refresh token invalide ou expiré",
         })
       );
     }

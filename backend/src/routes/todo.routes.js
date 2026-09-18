@@ -26,10 +26,12 @@ export function router(req, res) {
 
   res.setHeader("Access-Control-Allow-Origin", allowedOrigin);
   res.setHeader("Access-Control-Allow-Credentials", "true");
+
   res.setHeader(
     "Access-Control-Allow-Methods",
     "GET, POST, PUT, DELETE, OPTIONS"
   );
+
   res.setHeader(
     "Access-Control-Allow-Headers",
     "Content-Type, Authorization"
@@ -41,7 +43,7 @@ export function router(req, res) {
     return;
   }
 
-  //->AUTH
+  //-> AUTH
 
   if (method === "POST" && url === "/api/auth/signup") {
     return signup(req, res);
@@ -67,15 +69,15 @@ export function router(req, res) {
     return forgotPassword(req, res);
   }
 
-  // reset-password contient le token dans l'URL
   if (
     method === "POST" &&
     url.startsWith("/api/auth/reset-password/")
   ) {
-    return resetPassword(req, res);
+    const token = url.split("/").pop();
+    return resetPassword(req, res, token);
   }
 
-  //->TODOS
+  //-> TODOS
 
   if (method === "GET" && url === "/api/todos") {
     return authenticate(req, res, () => getTodos(req, res));
@@ -85,21 +87,29 @@ export function router(req, res) {
     return authenticate(req, res, () => addTodo(req, res));
   }
 
-  const todoMatch = url.match(/^\/api\/todos\/([a-fA-F0-9]{24})$/);
+  const todoMatch = url.match(
+    /^\/api\/todos\/([a-fA-F0-9]{24})$/
+  );
 
   if (todoMatch) {
     const id = todoMatch[1];
 
     if (method === "GET") {
-      return authenticate(req, res, () => getTodo(req, res, id));
+      return authenticate(req, res, () =>
+        getTodo(req, res, id)
+      );
     }
 
     if (method === "PUT") {
-      return authenticate(req, res, () => editTodo(req, res, id));
+      return authenticate(req, res, () =>
+        editTodo(req, res, id)
+      );
     }
 
     if (method === "DELETE") {
-      return authenticate(req, res, () => removeTodo(req, res, id));
+      return authenticate(req, res, () =>
+        removeTodo(req, res, id)
+      );
     }
   }
 
